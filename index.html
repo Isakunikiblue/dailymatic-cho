@@ -1,0 +1,1582 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    ============================================================
+    VERSI STATIS untuk GitHub Pages / hosting statis lain.
+    File ini TIDAK memakai google.script.run (itu cuma jalan di dalam
+    Apps Script). Semua pemanggilan data lewat fetch() ke Web App
+    Apps Script kamu, yang berfungsi sebagai backend/API.
+
+    CARA PAKAI:
+    1. Deploy project Apps Script (Code.gs + Index.html) sebagai Web App
+       (Deploy > New deployment > Web app). Pastikan "Who has access"
+       diset ke "Anyone" supaya bisa diakses dari luar (dari GitHub Pages).
+    2. Copy URL Web App hasil deploy (diakhiri /exec).
+    3. Tempel URL itu di APPS_SCRIPT_URL di bawah ini.
+    4. Upload file index.html ini ke repo GitHub kamu, aktifkan GitHub Pages.
+    ============================================================
+  -->
+  <meta charset="UTF-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --purple-1:#6D28D9;
+      --purple-2:#8B5CF6;
+      --purple-3:#A78BFA;
+      --green-1:#059669;
+      --green-2:#10B981;
+      --green-3:#34D399;
+      --bg-dark:#12101c;
+      --bg-card:rgba(255,255,255,0.06);
+      --bg-card-hover:rgba(255,255,255,0.1);
+      --border-soft:rgba(255,255,255,0.1);
+      --text-main:#F3F1FA;
+      --text-dim:#B7B0CC;
+      --radius:18px;
+      --shadow:0 8px 28px rgba(0,0,0,0.35);
+      color-scheme: dark;
+    }
+
+    *{ box-sizing:border-box; margin:0; padding:0; font-family:'Poppins', sans-serif; font-weight:300; }
+
+    body{
+      min-height:100vh;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(109,40,217,0.35), transparent 40%),
+        radial-gradient(circle at 90% 15%, rgba(16,185,129,0.28), transparent 45%),
+        radial-gradient(circle at 50% 100%, rgba(139,92,246,0.25), transparent 50%),
+        var(--bg-dark);
+      color:var(--text-main);
+      padding:28px 32px 60px;
+    }
+
+    /* ---------- HEADER ---------- */
+    .header{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:flex-end;
+      gap:16px;
+      margin-bottom:26px;
+    }
+    .header .title-wrap h1{
+      font-size:28px;
+      letter-spacing:0.3px;
+      background:linear-gradient(90deg,var(--purple-3),var(--green-3));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+    }
+    .header .title-wrap p{
+      color:var(--text-dim);
+      font-size:13px;
+      margin-top:4px;
+    }
+    .header-right{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+    .updated-at{
+      font-size:12px;
+      color:var(--text-dim);
+    }
+    .btn-refresh{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:linear-gradient(135deg,var(--purple-2),var(--green-2));
+      border:none;
+      color:#fff;
+      font-size:13px;
+      padding:10px 18px;
+      border-radius:999px;
+      cursor:pointer;
+      box-shadow:var(--shadow);
+      transition:transform .15s ease, box-shadow .15s ease;
+    }
+    .btn-refresh:hover{ transform:translateY(-2px); box-shadow:0 12px 30px rgba(0,0,0,0.45); }
+    .btn-refresh svg{ width:16px; height:16px; }
+    .btn-refresh.loading svg{ animation:spin 0.9s linear infinite; }
+    @keyframes spin{ from{transform:rotate(0)} to{transform:rotate(360deg)} }
+
+    /* ---------- FILTER BAR (GLOBAL) ---------- */
+    .filter-bar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      background:var(--bg-card);
+      border:1px solid var(--border-soft);
+      border-radius:var(--radius);
+      padding:18px 20px;
+      backdrop-filter: blur(14px);
+      margin-bottom:28px;
+      align-items:flex-end;
+    }
+    .filter-field{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width:160px;
+      flex:1 1 160px;
+    }
+    .filter-field label{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:0.6px;
+      color:var(--text-dim);
+    }
+    .filter-actions{
+      display:flex;
+      gap:10px;
+    }
+    .btn-apply, .btn-reset{
+      padding:10px 20px;
+      border-radius:12px;
+      font-size:13px;
+      cursor:pointer;
+      border:none;
+      transition:transform .15s ease, opacity .15s ease;
+      white-space:nowrap;
+    }
+    .btn-apply{
+      background:linear-gradient(135deg,var(--purple-2),var(--purple-1));
+      color:#fff;
+    }
+    .btn-reset{
+      background:rgba(255,255,255,0.08);
+      color:var(--text-main);
+      border:1px solid var(--border-soft);
+    }
+    .btn-apply:hover, .btn-reset:hover{ transform:translateY(-2px); }
+
+    /* ---------- Elemen form gelap ---------- */
+    .dark-select, .dark-input{
+      background-color:#1E1A2E;
+      border:1px solid var(--border-soft);
+      color:var(--text-main);
+      padding:10px 14px;
+      border-radius:12px;
+      font-size:13px;
+      outline:none;
+      transition:border .15s ease, background .15s ease;
+    }
+    .dark-select{
+      appearance:none;
+      -webkit-appearance:none;
+      cursor:pointer;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23B7B0CC'/></svg>");
+      background-repeat:no-repeat;
+      background-position:right 14px center;
+      padding-right:30px;
+      width:100%;
+    }
+    .dark-select:hover{ background-color:#241F38; }
+    .dark-select:focus, .dark-input:focus{ border-color:var(--green-3); }
+    .dark-select option{
+      background-color:#1E1A2E;
+      color:var(--text-main);
+      padding:8px;
+    }
+    .dark-select option:checked,
+    .dark-select option:hover{
+      background-color:var(--purple-2);
+      color:#fff;
+    }
+    .dark-input::placeholder{ color:var(--text-dim); }
+
+    /* ---------- CARDS ---------- */
+    .cards-grid{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:20px;
+      margin-bottom:34px;
+    }
+    @media (max-width: 1024px){ .cards-grid{ grid-template-columns:repeat(2,1fr); } }
+    @media (max-width: 640px){ .cards-grid{ grid-template-columns:1fr; } }
+
+    .card{
+      position:relative;
+      background:var(--bg-card);
+      border:1px solid var(--border-soft);
+      border-radius:var(--radius);
+      padding:22px;
+      overflow:hidden;
+      backdrop-filter: blur(14px);
+      box-shadow:var(--shadow);
+      transition:transform .2s ease, background .2s ease;
+    }
+    .card:hover{ transform:translateY(-4px); background:var(--bg-card-hover); }
+    .card::before{
+      content:"";
+      position:absolute;
+      top:-40%; right:-30%;
+      width:180px; height:180px;
+      background:radial-gradient(circle, var(--card-glow, var(--purple-2)) 0%, transparent 70%);
+      opacity:0.35;
+      pointer-events:none;
+    }
+    .card[data-key="produktivity"]{ --card-glow:#8B5CF6; }
+    .card[data-key="closedRate"]{ --card-glow:#34D399; }
+    .card[data-key="callbackRate"]{ --card-glow:#A78BFA; }
+    .card[data-key="hvcRate"]{ --card-glow:#10B981; }
+    .card[data-key="aht"]{ --card-glow:#C4B5FD; }
+    .card[data-key="qaScore"]{ --card-glow:#6EE7B7; }
+    .card[data-key="staffTime"]{ --card-glow:#FBBF24; }
+
+    .card-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:18px;
+    }
+    .card-icon{
+      width:42px; height:42px;
+      border-radius:12px;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg, var(--purple-2), var(--green-2));
+      flex-shrink:0;
+    }
+    .card-icon svg{ width:22px; height:22px; stroke:#fff; }
+    .card-label{
+      font-size:12.5px;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }
+    .card-value{
+      font-size:34px;
+      letter-spacing:-0.5px;
+      margin-bottom:4px;
+    }
+    .card-value.empty{ color:var(--text-dim); font-size:20px; }
+    .card-sub{
+      font-size:12px;
+      color:var(--text-dim);
+      margin-bottom:14px;
+    }
+    .spark-wrap{
+      overflow-x:auto;
+      margin:6px 0 2px;
+      scrollbar-width:none;
+    }
+    .spark-wrap::-webkit-scrollbar{ display:none; }
+    .sparkline{ display:block; }
+    .sparkline .line{
+      fill:none;
+      stroke:url(#sparkGradient);
+      stroke-width:2.4;
+      stroke-linecap:round;
+      stroke-linejoin:round;
+    }
+    .sparkline .area{ fill:url(#sparkFill); opacity:0.35; }
+    .sparkline .spark-dot{ fill:#fff; opacity:0.85; }
+    .sparkline .spark-dot-last{ fill:#fff; }
+    .sparkline .spark-value{ font-size:9.5px; fill:var(--text-main); }
+    .sparkline .spark-month{ font-size:8.5px; fill:var(--text-dim); }
+
+    .skeleton{
+      display:inline-block;
+      width:90px; height:30px;
+      border-radius:8px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.15) 37%, rgba(255,255,255,0.05) 63%);
+      background-size:400% 100%;
+      animation:shimmer 1.3s ease infinite;
+    }
+    @keyframes shimmer{
+      0%{ background-position:100% 50%; }
+      100%{ background-position:0 50%; }
+    }
+
+    .empty-state{
+      margin-top:60px;
+      text-align:center;
+      color:var(--text-dim);
+      font-size:13px;
+    }
+
+    /* ---------- DETAIL PENCAPAIAN HARIAN (Segmented Control) ---------- */
+    .section-heading{
+      font-size:15px;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      letter-spacing:0.6px;
+      margin-bottom:16px;
+    }
+
+    .detail-panel{
+      background:var(--bg-card);
+      border:1px solid var(--border-soft);
+      border-radius:var(--radius);
+      padding:20px;
+      backdrop-filter: blur(14px);
+      box-shadow:var(--shadow);
+    }
+
+    .detail-filter-row{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      align-items:flex-end;
+      background:rgba(255,255,255,0.03);
+      border:1px solid var(--border-soft);
+      border-radius:14px;
+      padding:14px 16px;
+      margin-bottom:18px;
+    }
+    .detail-filter-row .filter-field{ min-width:140px; flex:1 1 140px; }
+
+    .segmented-control{
+      display:flex;
+      gap:6px;
+      overflow-x:auto;
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--border-soft);
+      border-radius:999px;
+      padding:6px;
+      margin-bottom:18px;
+      scrollbar-width:none;
+    }
+    .segmented-control::-webkit-scrollbar{ display:none; }
+    .segment-btn{
+      flex:0 0 auto;
+      display:flex;
+      align-items:center;
+      gap:7px;
+      padding:10px 16px;
+      border-radius:999px;
+      border:none;
+      background:transparent;
+      color:var(--text-dim);
+      font-size:12.5px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:background .2s ease, color .2s ease;
+    }
+    .segment-btn svg{ width:14px; height:14px; flex-shrink:0; }
+    .segment-btn.active{
+      background:linear-gradient(135deg,var(--purple-2),var(--green-2));
+      color:#fff;
+      box-shadow:0 6px 16px rgba(0,0,0,0.35);
+    }
+    .segment-btn:hover:not(.active){ background:rgba(255,255,255,0.08); color:var(--text-main); }
+
+    .active-table-toolbar{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      margin-bottom:16px;
+    }
+    .at-search{ width:200px; }
+    .at-tl-filter{ width:190px; }
+    .toolbar-right{
+      margin-left:auto;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .active-avg-badge{
+      display:none;
+      align-items:center;
+      background:rgba(52,211,153,0.14);
+      color:var(--green-3);
+      padding:8px 14px;
+      border-radius:999px;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .btn-download{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      background:linear-gradient(135deg, var(--green-2), var(--green-1));
+      border:none;
+      color:#fff;
+      padding:9px 15px;
+      border-radius:10px;
+      font-size:12px;
+      cursor:pointer;
+      white-space:nowrap;
+      transition:transform .15s ease, opacity .15s ease;
+    }
+    .btn-download:hover{ transform:translateY(-2px); }
+    .btn-download svg{ width:14px; height:14px; }
+
+    .table-scroll{
+      max-height:420px;
+      overflow:auto;
+    }
+
+    .pop-inline-badge{
+      display:none;
+      align-items:center;
+      gap:8px;
+      background:rgba(139,92,246,0.14);
+      border:1px solid rgba(139,92,246,0.35);
+      color:var(--text-main);
+      padding:8px 16px;
+      border-radius:999px;
+      font-size:12.5px;
+      white-space:nowrap;
+    }
+    .pop-inline-badge strong{ color:var(--green-3); font-size:14px; }
+    .detail-table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    .detail-table thead th{
+      position:sticky;
+      top:0;
+      background:#211C33;
+      color:var(--text-dim);
+      text-transform:uppercase;
+      font-size:11px;
+      letter-spacing:0.4px;
+      text-align:left;
+      padding:10px 12px;
+      z-index:1;
+    }
+    .detail-table tbody td{
+      padding:10px 12px;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+      color:var(--text-main);
+    }
+    .detail-table tbody tr:hover{ background:rgba(255,255,255,0.04); }
+    .detail-table td.value-cell{ font-weight:300; }
+    .detail-table td.value-zero{ color:var(--text-dim); }
+
+    .modal-note{
+      font-size:11.5px;
+      color:var(--text-dim);
+      margin-top:12px;
+      text-align:center;
+    }
+    .modal-loading, .modal-empty{
+      text-align:center;
+      color:var(--text-dim);
+      font-size:13px;
+      padding:34px 0;
+    }
+    /* ---------- LOGIN SCREEN ---------- */
+    .login-screen{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+    .login-card{
+      width:100%;
+      max-width:380px;
+      background:var(--bg-card);
+      border:1px solid var(--border-soft);
+      border-radius:22px;
+      padding:36px 32px;
+      backdrop-filter: blur(16px);
+      box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    }
+    .login-logo{
+      width:52px; height:52px;
+      border-radius:16px;
+      display:flex; align-items:center; justify-content:center;
+      background:linear-gradient(135deg, var(--purple-2), var(--green-2));
+      margin:0 auto 18px;
+    }
+    .login-logo svg{ width:26px; height:26px; stroke:#fff; }
+    .login-card h1{
+      text-align:center;
+      font-size:20px;
+      margin-bottom:4px;
+      background:linear-gradient(90deg,var(--purple-3),var(--green-3));
+      -webkit-background-clip:text; background-clip:text; color:transparent;
+    }
+    .login-card p.subtitle{ text-align:center; color:var(--text-dim); font-size:12.5px; margin-bottom:26px; }
+    .login-field{ margin-bottom:16px; }
+    .login-field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-dim); margin-bottom:6px; }
+    .login-field input{ width:100%; }
+    .btn-login{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:none;
+      background:linear-gradient(135deg,var(--purple-2),var(--green-2));
+      color:#fff;
+      font-size:14px;
+      cursor:pointer;
+      margin-top:6px;
+      transition:transform .15s ease, opacity .15s ease;
+    }
+    .btn-login:hover{ transform:translateY(-2px); }
+    .btn-login:disabled{ opacity:0.6; cursor:default; transform:none; }
+    .login-error{
+      display:none;
+      background:rgba(248,113,113,0.12);
+      border:1px solid rgba(248,113,113,0.35);
+      color:#F87171;
+      font-size:12px;
+      padding:10px 12px;
+      border-radius:10px;
+      margin-bottom:16px;
+    }
+
+    /* ---------- HEADER: user info & aksi ---------- */
+    .user-chip{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:rgba(255,255,255,0.06);
+      border:1px solid var(--border-soft);
+      padding:7px 12px;
+      border-radius:999px;
+      font-size:12px;
+    }
+    .user-chip .role-badge{
+      font-size:10px;
+      padding:2px 8px;
+      border-radius:999px;
+      background:linear-gradient(135deg,var(--purple-2),var(--green-2));
+      color:#fff;
+      text-transform:uppercase;
+    }
+    .btn-icon{
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border-soft);
+      color:var(--text-main);
+      width:36px; height:36px;
+      border-radius:10px;
+      cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .15s ease;
+    }
+    .btn-icon:hover{ background:rgba(255,255,255,0.16); }
+    .btn-icon svg{ width:16px; height:16px; }
+
+    /* ---------- MODAL: Manajemen User ---------- */
+    .um-overlay{
+      position:fixed; inset:0;
+      background:rgba(8,6,14,0.72);
+      backdrop-filter: blur(4px);
+      display:none;
+      align-items:center; justify-content:center;
+      z-index:200;
+      padding:24px;
+    }
+    .um-overlay.open{ display:flex; }
+    .um-panel{
+      width:100%; max-width:640px; max-height:85vh;
+      background:#181425;
+      border:1px solid var(--border-soft);
+      border-radius:20px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.55);
+      display:flex; flex-direction:column; overflow:hidden;
+    }
+    .um-header{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:18px 22px;
+      border-bottom:1px solid var(--border-soft);
+      background:linear-gradient(135deg, rgba(139,92,246,0.18), rgba(16,185,129,0.12));
+      flex-shrink:0;
+    }
+    .um-header h2{ font-size:16px; }
+    .um-body{ overflow:auto; padding:18px 22px; }
+    .um-add-form{
+      display:flex; flex-wrap:wrap; gap:10px; align-items:flex-end;
+      background:rgba(255,255,255,0.04);
+      border:1px solid var(--border-soft);
+      border-radius:14px;
+      padding:14px; margin-bottom:18px;
+    }
+    .um-add-form .filter-field{ min-width:130px; flex:1 1 130px; }
+    .um-add-form .filter-field input, .um-add-form .filter-field select{ width:100%; }
+    .um-table{ width:100%; border-collapse:collapse; font-size:13px; }
+    .um-table th, .um-table td{ text-align:left; padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.06); }
+    .um-table th{ color:var(--text-dim); text-transform:uppercase; font-size:10.5px; letter-spacing:0.4px; }
+    .um-role-pill{ font-size:10.5px; padding:2px 9px; border-radius:999px; }
+    .um-role-pill.superadmin{ background:rgba(139,92,246,0.25); color:var(--purple-3); }
+    .um-role-pill.view{ background:rgba(16,185,129,0.2); color:var(--green-3); }
+    .um-actions{ display:flex; gap:6px; }
+    .um-actions button{
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border-soft);
+      color:var(--text-main);
+      padding:5px 10px;
+      border-radius:8px;
+      font-size:11.5px;
+      cursor:pointer;
+    }
+    .um-actions button.danger{ color:#F87171; }
+    .um-actions button:hover{ background:rgba(255,255,255,0.16); }
+    .um-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+  </style>
+</head>
+<body>
+
+  <!-- ============ LOGIN SCREEN ============ -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M7 15l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h1>Daily Matic CHO</h1>
+      <p class="subtitle">Masuk untuk melihat dashboard performa CHO</p>
+
+      <div class="login-error" id="loginError"></div>
+
+      <form id="loginForm" onsubmit="return handleLogin(event)">
+        <div class="login-field">
+          <label>Username</label>
+          <input type="text" id="loginUsername" class="dark-input" autocomplete="username" required>
+        </div>
+        <div class="login-field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" class="dark-input" autocomplete="current-password" required>
+        </div>
+        <button type="submit" class="btn-login" id="btnLogin">Masuk</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ APP (dashboard) ============ -->
+  <div id="appScreen" style="display:none;">
+
+  <div class="header">
+    <div class="title-wrap">
+      <h1>Daily Matic CHO</h1>
+      <p>Ringkasan performa &amp; kualitas agent CHO</p>
+    </div>
+    <div class="header-right">
+      <span class="updated-at" id="updatedAt">Memuat data...</span>
+      <span class="user-chip" id="userChip"></span>
+      <button class="btn-icon" id="btnManageUsers" onclick="openUserManager()" style="display:none;" title="Kelola User">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="10" cy="7" r="4"/>
+          <path d="M22 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="btn-icon" onclick="handleLogout()" title="Keluar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M16 17l5-5-5-5M21 12H9" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="btn-refresh" id="btnRefresh" onclick="loadData(true)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2">
+          <path d="M4 4v6h6M20 20v-6h-6" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M20 10a8 8 0 00-14.9-3M4 14a8 8 0 0014.9 3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div class="filter-field">
+      <label>Tgl</label>
+      <select id="filterTgl" class="dark-select"><option value="All">Semua Tanggal</option></select>
+    </div>
+    <div class="filter-field">
+      <label>Bulan</label>
+      <select id="filterBulan" class="dark-select"><option value="All">Semua Bulan</option></select>
+    </div>
+    <div class="filter-field">
+      <label>Tahun</label>
+      <select id="filterTahun" class="dark-select"><option value="All">Semua Tahun</option></select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn-apply" onclick="loadData()">Terapkan</button>
+      <button class="btn-reset" onclick="resetFilters()">Reset</button>
+    </div>
+  </div>
+
+  <div class="cards-grid" id="cardsGrid"></div>
+
+  <div class="section-heading">Detail Pencapaian Harian</div>
+  <div class="detail-panel">
+    <div class="detail-filter-row">
+      <div class="filter-field">
+        <label>Tgl</label>
+        <select id="detailTgl" class="dark-select"><option value="All">Semua Tanggal</option></select>
+      </div>
+      <div class="filter-field">
+        <label>Bulan</label>
+        <select id="detailBulan" class="dark-select"><option value="All">Semua Bulan</option></select>
+      </div>
+      <div class="filter-field">
+        <label>Tahun</label>
+        <select id="detailTahun" class="dark-select"><option value="All">Semua Tahun</option></select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn-apply" onclick="applyDetailFilters()">Terapkan</button>
+        <button class="btn-reset" onclick="resetDetailFilters()">Reset</button>
+      </div>
+    </div>
+    <div class="segmented-control" id="segmentedControl"></div>
+    <div class="active-table-toolbar">
+      <input type="text" id="activeSearch" class="dark-input at-search" placeholder="Cari nama agent...">
+      <select id="activeTLFilter" class="dark-select at-tl-filter"><option value="All">Semua Team Leader</option></select>
+      <span class="pop-inline-badge" id="tlPopBadge" style="display:none;"></span>
+      <div class="toolbar-right">
+        <span class="active-avg-badge" id="activeAvgBadge"></span>
+        <button class="btn-download" onclick="exportActiveTableToExcel()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Unduh .xlsx
+        </button>
+      </div>
+    </div>
+    <div class="table-scroll" id="activeTableScroll">
+      <div class="modal-empty">Pilih Tgl / Bulan / Tahun di atas, lalu klik <strong>Terapkan</strong> untuk menampilkan data.</div>
+    </div>
+  </div>
+
+  </div> <!-- /#appScreen -->
+
+  <!-- ============ MODAL: Manajemen User (superadmin) ============ -->
+  <div class="um-overlay" id="umOverlay" onclick="if(event.target===this) closeUserManager()">
+    <div class="um-panel">
+      <div class="um-header">
+        <h2>Kelola User</h2>
+        <button class="btn-icon" onclick="closeUserManager()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+      <div class="um-body">
+        <div class="um-add-form">
+          <div class="filter-field">
+            <label id="umUsernameLabel">Username</label>
+            <input type="text" id="umNewUsername" class="dark-input" placeholder="Username">
+          </div>
+          <div class="filter-field">
+            <label>Nama</label>
+            <input type="text" id="umNewNama" class="dark-input" placeholder="Nama lengkap">
+          </div>
+          <div class="filter-field">
+            <label>Password</label>
+            <input type="password" id="umNewPassword" class="dark-input" placeholder="Min 6 karakter">
+          </div>
+          <div class="filter-field">
+            <label>Role</label>
+            <select id="umNewRole" class="dark-select" onchange="onUmRoleChange()">
+              <option value="view">view</option>
+              <option value="superadmin">superadmin</option>
+            </select>
+          </div>
+          <button class="btn-apply" onclick="submitCreateUser()">+ Tambah User</button>
+        </div>
+        <div class="um-note" id="umFormNote" style="display:none;">Username untuk role "view" memakai kode CSDM karyawan.</div>
+        <div id="umTableWrap" style="margin-top:16px;">
+          <div class="modal-loading">Memuat data...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SVG defs untuk gradient sparkline -->
+  <svg width="0" height="0">
+    <defs>
+      <linearGradient id="sparkGradient" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="#8B5CF6"/>
+        <stop offset="100%" stop-color="#34D399"/>
+      </linearGradient>
+      <linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#34D399"/>
+        <stop offset="100%" stop-color="transparent"/>
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <script>
+    /* ============================================================
+     *  KONFIGURASI - WAJIB DIISI
+     *  Tempel URL Web App Apps Script kamu di sini (diakhiri /exec).
+     * ============================================================ */
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTPVuAsPSwbXpWK9CyYobj_3V7BzlbDMQqa_N063h3EMFv4DcUPw3T5iEz6gPNJu8rdw/exec';
+
+    /**
+     * Pengganti google.script.run untuk versi statis (GitHub Pages).
+     * Memanggil Web App Apps Script sebagai API lewat fetch() (metode GET,
+     * supaya tidak kena masalah CORS preflight). Return sebuah Promise.
+     * params: object -> otomatis dikirim sebagai query string;
+     *         nilai berupa object/array otomatis di-JSON.stringify dulu.
+     */
+    function callApi(action, params){
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_URL') === 0){
+        return Promise.reject(new Error('APPS_SCRIPT_URL belum diisi. Buka index.html, isi URL Web App Apps Script kamu di bagian atas <script>.'));
+      }
+      params = params || {};
+      const url = new URL(APPS_SCRIPT_URL);
+      url.searchParams.set('action', action);
+      Object.keys(params).forEach(function(k){
+        const v = params[k];
+        if (v === undefined || v === null) return;
+        url.searchParams.set(k, (typeof v === 'object') ? JSON.stringify(v) : String(v));
+      });
+      return fetch(url.toString())
+        .then(function(res){
+          return res.text().then(function(text){
+            let json;
+            try {
+              json = JSON.parse(text);
+            } catch (e) {
+              throw new Error('Server tidak mengembalikan JSON (kemungkinan Web App Apps Script belum di-deploy ulang dengan versi kode terbaru, atau URL-nya salah). Buka Apps Script > Deploy > Manage deployments > Edit > pilih "New version" > Deploy.');
+            }
+            return json;
+          });
+        })
+        .then(function(json){
+          if (!json || !json.ok) throw new Error((json && json.error) || 'Terjadi kesalahan pada server.');
+          return json.data;
+        });
+    }
+
+    const ICONS = {
+      productivity: '<path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/>',
+      closed: '<path d="M20 6L9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/>',
+      callback: '<path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6A19.8 19.8 0 012.1 4.2 2 2 0 014.1 2h3a2 2 0 012 1.7c.1.9.3 1.8.6 2.7a2 2 0 01-.5 2.1L8 9.7a16 16 0 006.3 6.3l1.2-1.2a2 2 0 012.1-.5c.9.3 1.8.5 2.7.6a2 2 0 011.7 2.1z" stroke-linecap="round" stroke-linejoin="round"/>',
+      hvc: '<path d="M12 2l2.6 6.6L22 9.3l-5 4.9 1.2 7.1L12 17.8l-6.2 3.5L7 14.2 2 9.3l7.4-.7z" stroke-linecap="round" stroke-linejoin="round"/>',
+      aht: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3" stroke-linecap="round" stroke-linejoin="round"/>',
+      qa: '<path d="M9 12l2 2 4-4" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="9"/>',
+      stafftime: '<path d="M9 2h6" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 2v3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2" stroke-linecap="round" stroke-linejoin="round"/>'
+    };
+
+    // Sesi login saat ini: { token, username, role, nama } atau null kalau belum login
+    let currentSession = null;
+    const SESSION_STORAGE_KEY = 'dailyMaticCho_session';
+
+    const CARD_ORDER = ['produktivity','closedRate','callbackRate','hvcRate','aht','qaScore','staffTime'];
+
+    // Filter ATAS - hanya mengontrol 6 card
+    let currentFilters = { tgl:'All', bulan:'All', tahun:'All' };
+
+    // Filter khusus panel "Detail Pencapaian Harian" - independen dari filter atas
+    let detailFilters = { tgl:'All', bulan:'All', tahun:'All' };
+    let detailApplied = false; // true setelah tombol Terapkan (di panel detail) pernah diklik
+
+    // Cache data tabel hasil fetch server (per metrik, untuk kombinasi detailFilters yang sedang diterapkan)
+    let tableDataCache = {};
+    // State filter LOKAL per tab (TL, search) - diingat per metrik saat pindah tab
+    let tableLocalFilters = {};
+    CARD_ORDER.forEach(k => { tableLocalFilters[k] = { tl:'All', search:'', searchRaw:'' }; });
+
+    let activeTableKey = CARD_ORDER[0];
+
+    // Simpan unit per metrik (dipakai untuk format nilai di panel Populasi Team Leader)
+    let cardUnits = {};
+
+    /* ---------------- Helper umum ---------------- */
+
+    function labelOf(key){
+      const map = {
+        produktivity:'AVG Produktivity', closedRate:'Closed Rate', callbackRate:'Callback Rate',
+        hvcRate:'HVC Rate', aht:'AHT', qaScore:'QA Score', staffTime:'Staff Time'
+      };
+      return map[key] || key;
+    }
+    function iconOf(key){
+      const map = {
+        produktivity:'productivity', closedRate:'closed', callbackRate:'callback',
+        hvcRate:'hvc', aht:'aht', qaScore:'qa', staffTime:'stafftime'
+      };
+      return map[key] || 'productivity';
+    }
+
+    function formatHMS_(val){
+      const totalSec = Math.round(val);
+      const hh = Math.floor(totalSec / 3600);
+      const mm = Math.floor((totalSec % 3600) / 60);
+      const ss = totalSec % 60;
+      return String(hh).padStart(2,'0') + ':' + String(mm).padStart(2,'0') + ':' + String(ss).padStart(2,'0');
+    }
+
+    function formatValue(unit, val){
+      if (val === null || val === undefined || isNaN(val)) return { text:'-', sub:'Tidak ada data' };
+      if (unit === 'percent'){
+        const pct = val <= 1 ? val * 100 : val;
+        return { text: pct.toFixed(1) + '%', sub:'Rata-rata periode terpilih' };
+      }
+      if (unit === 'time'){
+        return { text: Math.round(val) + ' dtk', sub:'Rata-rata durasi (detik)' };
+      }
+      if (unit === 'hms'){
+        return { text: formatHMS_(val), sub:'Rata-rata durasi (jam:menit:detik)' };
+      }
+      return { text: val.toFixed(2), sub:'Rata-rata periode terpilih' };
+    }
+
+    function formatRowValue(unit, val){
+      if (val === null || val === undefined || isNaN(val)) return '-';
+      if (unit === 'percent'){
+        const pct = val <= 1 ? val * 100 : val;
+        return pct.toFixed(1) + '%';
+      }
+      if (unit === 'time'){
+        return Math.round(val) + ' dtk';
+      }
+      if (unit === 'hms'){
+        return formatHMS_(val);
+      }
+      return val.toFixed(2);
+    }
+
+    /* ---------------- Cards ---------------- */
+
+    function renderSkeletonCards(){
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+      CARD_ORDER.forEach(key => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-key', key);
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2">${ICONS[iconOf(key)]}</svg></div>
+          </div>
+          <div class="card-label">${labelOf(key)}</div>
+          <div class="skeleton" style="margin-top:8px;"></div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function shortMonthLabel(key){
+      const parts = String(key).trim().split(' ');
+      const monthPart = parts[0].slice(0, 3);
+      if (parts[1]) {
+        return monthPart + "'" + parts[1].slice(-2);
+      }
+      return monthPart;
+    }
+
+    function buildSparkline(trend, unit){
+      if (!trend || trend.length < 2) return '';
+      const perPoint = 58;
+      const w = Math.max(220, trend.length * perPoint);
+      const h = 74;
+      const padX = 18, padTop = 20, padBottom = 18;
+      const plotH = h - padTop - padBottom;
+
+      const values = trend.map(t => t.value);
+      const min = Math.min(...values), max = Math.max(...values);
+      const range = (max - min) || 1;
+      const stepX = (w - padX*2) / (trend.length - 1);
+
+      const points = trend.map((t, i) => {
+        const x = padX + i * stepX;
+        const y = padTop + plotH - ((t.value - min) / range) * plotH;
+        return { x: x, y: y, t: t };
+      });
+
+      const linePath = points.map((p,i) => (i===0?'M':'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
+      const areaPath = linePath + ` L${points[points.length-1].x.toFixed(1)},${h-padBottom} L${points[0].x.toFixed(1)},${h-padBottom} Z`;
+
+      const dots = points.map((p, i) => {
+        const isLast = i === points.length - 1;
+        const label = shortMonthLabel(p.t.bulan) + ': ' + formatRowValue(unit, p.t.value);
+        return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${isLast?3.2:2.4}" class="${isLast?'spark-dot-last':'spark-dot'}"><title>${label}</title></circle>`;
+      }).join('');
+
+      const valueLabels = points.map(p => {
+        const label = formatRowValue(unit, p.t.value);
+        return `<text x="${p.x.toFixed(1)}" y="${(p.y-8).toFixed(1)}" text-anchor="middle" class="spark-value">${label}</text>`;
+      }).join('');
+
+      const monthLabels = points.map(p => {
+        return `<text x="${p.x.toFixed(1)}" y="${h-3}" text-anchor="middle" class="spark-month">${shortMonthLabel(p.t.bulan)}</text>`;
+      }).join('');
+
+      return `
+        <div class="spark-wrap">
+          <svg class="sparkline" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+            <path class="area" d="${areaPath}"></path>
+            <path class="line" d="${linePath}"></path>
+            ${dots}
+            ${valueLabels}
+            ${monthLabels}
+          </svg>
+        </div>
+      `;
+    }
+
+    function renderCards(data){
+      const grid = document.getElementById('cardsGrid');
+      grid.innerHTML = '';
+      CARD_ORDER.forEach(key => {
+        const item = data[key];
+        cardUnits[key] = item.unit;
+        const fmt = formatValue(item.unit, item.average);
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.setAttribute('data-key', key);
+        card.innerHTML = `
+          <div class="card-top">
+            <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke-width="2">${ICONS[item.icon] || ''}</svg></div>
+          </div>
+          <div class="card-label">${item.label}</div>
+          <div class="card-value ${fmt.text==='-' ? 'empty':''}">${fmt.text}</div>
+          <div class="card-sub">${fmt.sub}</div>
+          ${buildSparkline(item.trend, item.unit)}
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    /* ---------------- Segmented Control + Tabel Aktif ---------------- */
+
+    function buildSegmentedControl(){
+      const wrap = document.getElementById('segmentedControl');
+      wrap.innerHTML = '';
+      CARD_ORDER.forEach(key => {
+        const btn = document.createElement('button');
+        btn.className = 'segment-btn' + (key === activeTableKey ? ' active' : '');
+        btn.setAttribute('data-key', key);
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke-width="2">${ICONS[iconOf(key)]}</svg><span>${labelOf(key)}</span>`;
+        btn.onclick = function(){ setActiveTab(key); };
+        wrap.appendChild(btn);
+      });
+    }
+
+    function setActiveTab(key){
+      activeTableKey = key;
+      document.querySelectorAll('.segment-btn').forEach(function(b){
+        b.classList.toggle('active', b.getAttribute('data-key') === key);
+      });
+      document.getElementById('activeSearch').value = tableLocalFilters[key].searchRaw || '';
+      const tlSel = document.getElementById('activeTLFilter');
+      if (tlSel.querySelector('option[value="' + tableLocalFilters[key].tl + '"]')) {
+        tlSel.value = tableLocalFilters[key].tl;
+      } else {
+        tlSel.value = 'All';
+      }
+
+      if (!detailApplied){
+        document.getElementById('activeTableScroll').innerHTML =
+          '<div class="modal-empty">Pilih Tgl / Bulan / Tahun di atas, lalu klik <strong>Terapkan</strong> untuk menampilkan data.</div>';
+        document.getElementById('activeAvgBadge').style.display = 'none';
+        document.getElementById('tlPopBadge').style.display = 'none';
+        return;
+      }
+
+      updateTLPopulationPanel(tlSel.value);
+
+      if (tableDataCache[key]) {
+        renderActiveTable();
+      } else {
+        fetchActiveTableDetail(key);
+      }
+    }
+
+    function fetchActiveTableDetail(key){
+      document.getElementById('activeTableScroll').innerHTML = '<div class="modal-loading">Memuat data...</div>';
+      document.getElementById('activeAvgBadge').style.display = 'none';
+      callApi('getDetailTable', { key: key, filters: detailFilters, token: currentSession.token })
+        .then(function(detail){
+          tableDataCache[key] = detail;
+          if (!tableLocalFilters[key]) tableLocalFilters[key] = { tl:'All', search:'', searchRaw:'' };
+          if (activeTableKey === key) renderActiveTable();
+        })
+        .catch(function(err){
+          if (activeTableKey === key){
+            document.getElementById('activeTableScroll').innerHTML =
+              '<div class="modal-empty">Gagal memuat data: ' + err.message + '</div>';
+          }
+        });
+    }
+
+    function populateActiveTLSelect(tlOptions){
+      const sel = document.getElementById('activeTLFilter');
+      const currentVal = tableLocalFilters[activeTableKey].tl || 'All';
+      sel.innerHTML = '<option value="All">Semua Team Leader</option>' +
+        tlOptions.map(o => `<option value="${o}" ${o===currentVal?'selected':''}>${o}</option>`).join('');
+    }
+
+    function renderActiveTable(){
+      const container = document.getElementById('activeTableScroll');
+      const badge = document.getElementById('activeAvgBadge');
+      const key = activeTableKey;
+      const detail = tableDataCache[key];
+
+      if (!detail){
+        container.innerHTML = '<div class="modal-loading">Memuat data...</div>';
+        badge.style.display = 'none';
+        return;
+      }
+
+      const result = getFilteredActiveRows_();
+      const rows = result.rows;
+
+      // Mini average live sesuai filter tabel ini (nilai 0 tidak dihitung, konsisten dgn card)
+      const nonZero = rows.map(r => r.value).filter(v => v !== 0 && !isNaN(v));
+      if (nonZero.length > 0){
+        const avg = nonZero.reduce((a,b) => a+b, 0) / nonZero.length;
+        badge.textContent = 'Rata-rata (filter ini): ' + formatRowValue(detail.unit, avg);
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+
+      if (rows.length === 0){
+        container.innerHTML = '<div class="modal-empty">Tidak ada data untuk filter ini.</div>';
+        return;
+      }
+
+      const showDateCols = detail.group === 'new';
+      const headCols = showDateCols
+        ? '<th>Tgl</th><th>Bulan</th><th>Tahun</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>'
+        : '<th>Bulan</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>';
+
+      const bodyRows = rows.map(function(r){
+        const valText = formatRowValue(detail.unit, r.value);
+        const valClass = r.value === 0 ? 'value-cell value-zero' : 'value-cell';
+        const cells = showDateCols
+          ? `<td>${r.tgl}</td><td>${r.bulan}</td><td>${r.tahun}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`
+          : `<td>${r.bulan}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`;
+        return `<tr>${cells}</tr>`;
+      }).join('');
+
+      let note = '';
+      if (detail.totalRows > detail.rows.length){
+        note += `<div class="modal-note">Server membatasi ${detail.rows.length} dari total ${detail.totalRows} baris. Persempit filter atas (Tgl/Bulan/Tahun) untuk hasil lebih spesifik.</div>`;
+      }
+      note += `<div class="modal-note">${rows.length} baris ditampilkan setelah filter tabel ini.</div>`;
+
+      container.innerHTML = `
+        <table class="detail-table">
+          <thead><tr>${headCols}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+        ${note}
+      `;
+    }
+
+    /* ---------------- Populasi Team Leader ---------------- */
+
+    // Cache hasil populasi per metrik (tab), supaya ganti TL di dropdown tidak perlu fetch ulang
+    let populationDataCache = {};
+
+    function updateTLPopulationPanel(tlName){
+      const badge = document.getElementById('tlPopBadge');
+      if (!tlName || tlName === 'All'){
+        badge.style.display = 'none';
+        return;
+      }
+
+      if (populationDataCache[activeTableKey]){
+        renderTLPopulation(populationDataCache[activeTableKey], tlName);
+        return;
+      }
+
+      badge.style.display = 'inline-flex';
+      badge.innerHTML = `${tlName}: <strong>...</strong>`;
+      badge.title = 'Memuat data populasi...';
+
+      const key = activeTableKey;
+      callApi('getMetricPopulation', { key: key, filters: detailFilters, token: currentSession.token })
+        .then(function(data){
+          populationDataCache[key] = data;
+          if (activeTableKey === key) renderTLPopulation(data, tableLocalFilters[key].tl);
+        })
+        .catch(function(err){
+          if (activeTableKey === key){
+            badge.innerHTML = `${tlName}: <strong>Error</strong>`;
+            badge.title = err.message;
+          }
+        });
+    }
+
+    function renderTLPopulation(data, tlName){
+      const badge = document.getElementById('tlPopBadge');
+
+      if (!tlName || tlName === 'All'){
+        badge.style.display = 'none';
+        return;
+      }
+      badge.style.display = 'inline-flex';
+
+      if (data.noTarget){
+        badge.innerHTML = `${tlName}: <strong>Target belum diatur</strong>`;
+        badge.title = 'Metrik "' + data.label + '" belum punya target populasi.';
+        return;
+      }
+
+      const row = (data.rows || []).find(r => r.tl === tlName);
+
+      if (!row){
+        badge.innerHTML = `${tlName}: <strong>-</strong>`;
+        badge.title = 'Tidak ada data ' + data.unitLabel + ' untuk periode ini.';
+        return;
+      }
+
+      badge.innerHTML = `${row.tl}: <strong>${row.percent.toFixed(1)}%</strong>`;
+      badge.title = 'Populasi ' + labelOf(data.key) + ' — ' + row.passUnit + ' dari ' + row.totalUnit + ' ' + data.unitLabel + ' mencapai target';
+    }
+
+    function getFilteredActiveRows_(){
+      const key = activeTableKey;
+      const detail = tableDataCache[key];
+      if (!detail) return null;
+      const localF = tableLocalFilters[key];
+      let rows = detail.rows;
+      if (localF.tl && localF.tl !== 'All') rows = rows.filter(r => r.tl === localF.tl);
+      if (localF.search) rows = rows.filter(r => (r.agent || '').toLowerCase().includes(localF.search));
+      return { detail: detail, rows: rows };
+    }
+
+    function exportActiveTableToExcel(){
+      if (typeof XLSX === 'undefined'){
+        alert('Modul export Excel gagal dimuat. Cek koneksi internet lalu coba lagi.');
+        return;
+      }
+      const result = getFilteredActiveRows_();
+      if (!result || result.rows.length === 0){
+        alert('Tidak ada data untuk diunduh pada filter saat ini.');
+        return;
+      }
+      const detail = result.detail;
+      const rows = result.rows;
+      const showDateCols = detail.group === 'new';
+      const header = showDateCols
+        ? ['Tgl','Bulan','Tahun','Nama Agent','Team Leader','Nilai']
+        : ['Bulan','Nama Agent','Team Leader','Nilai'];
+
+      const aoa = [header];
+      rows.forEach(function(r){
+        const valText = formatRowValue(detail.unit, r.value);
+        aoa.push(showDateCols
+          ? [r.tgl, r.bulan, r.tahun, r.agent, r.tl, valText]
+          : [r.bulan, r.agent, r.tl, valText]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, detail.label.substring(0, 31));
+
+      const safeLabel = detail.label.replace(/[^a-z0-9]/gi, '_');
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(wb, 'Detail_' + safeLabel + '_' + dateStr + '.xlsx');
+    }
+
+    /* ---------------- Filter global & load data ---------------- */
+
+    function populateSelect(id, options, selected, placeholder){
+      const el = document.getElementById(id);
+      const currentVal = selected || 'All';
+      el.innerHTML = `<option value="All">${placeholder}</option>` +
+        options.map(o => `<option value="${o}" ${o===currentVal?'selected':''}>${o}</option>`).join('');
+    }
+
+    function applyFilterOptions(opts){
+      populateSelect('filterTgl', opts.tgl, currentFilters.tgl, 'Semua Tanggal');
+      populateSelect('filterBulan', opts.bulan, currentFilters.bulan, 'Semua Bulan');
+      populateSelect('filterTahun', opts.tahun, currentFilters.tahun, 'Semua Tahun');
+
+      populateSelect('detailTgl', opts.tgl, detailFilters.tgl, 'Semua Tanggal');
+      populateSelect('detailBulan', opts.bulan, detailFilters.bulan, 'Semua Bulan');
+      populateSelect('detailTahun', opts.tahun, detailFilters.tahun, 'Semua Tahun');
+
+      // Default cerdas: selama panel detail belum pernah diterapkan, arahkan ke
+      // Bulan & Tahun TERBARU supaya klik Terapkan pertama tidak menarik seluruh histori data.
+      if (!detailApplied){
+        if (opts.tahun && opts.tahun.length > 0){
+          const latestYear = opts.tahun[opts.tahun.length - 1];
+          document.getElementById('detailTahun').value = latestYear;
+          detailFilters.tahun = latestYear;
+        }
+        if (opts.bulan && opts.bulan.length > 0){
+          const latestMonth = opts.bulan[opts.bulan.length - 1];
+          document.getElementById('detailBulan').value = latestMonth;
+          detailFilters.bulan = latestMonth;
+        }
+      }
+
+      populateActiveTLSelect(opts.tl);
+    }
+
+    function readFiltersFromUI(){
+      currentFilters = {
+        tgl:   document.getElementById('filterTgl').value,
+        bulan: document.getElementById('filterBulan').value,
+        tahun: document.getElementById('filterTahun').value
+      };
+    }
+
+    function resetFilters(){
+      currentFilters = { tgl:'All', bulan:'All', tahun:'All' };
+      document.getElementById('filterTgl').value = 'All';
+      document.getElementById('filterBulan').value = 'All';
+      document.getElementById('filterTahun').value = 'All';
+      loadData();
+    }
+
+    function applyDetailFilters(){
+      detailFilters = {
+        tgl:   document.getElementById('detailTgl').value,
+        bulan: document.getElementById('detailBulan').value,
+        tahun: document.getElementById('detailTahun').value
+      };
+      detailApplied = true;
+      tableDataCache = {}; // kombinasi filter detail berubah -> cache lama tidak valid lagi
+      populationDataCache = {};
+      fetchActiveTableDetail(activeTableKey);
+      updateTLPopulationPanel(tableLocalFilters[activeTableKey].tl);
+    }
+
+    function resetDetailFilters(){
+      detailFilters = { tgl:'All', bulan:'All', tahun:'All' };
+      document.getElementById('detailTgl').value = 'All';
+      document.getElementById('detailBulan').value = 'All';
+      document.getElementById('detailTahun').value = 'All';
+
+      // Reset juga filter lokal (search & Team Leader) di SEMUA tab tabel detail
+      CARD_ORDER.forEach(function(k){
+        tableLocalFilters[k] = { tl:'All', search:'', searchRaw:'' };
+      });
+      document.getElementById('activeSearch').value = '';
+      document.getElementById('activeTLFilter').value = 'All';
+
+      detailApplied = true;
+      tableDataCache = {};
+      populationDataCache = {};
+      fetchActiveTableDetail(activeTableKey);
+      document.getElementById('tlPopBadge').style.display = 'none';
+    }
+
+    function loadData(forceRefresh){
+      readFiltersFromUI();
+      const btn = document.getElementById('btnRefresh');
+      btn.classList.add('loading');
+      renderSkeletonCards();
+
+      callApi('getDashboardBundle', { filters: currentFilters, forceRefresh: !!forceRefresh, token: currentSession.token })
+        .then(function(bundle){
+          applyFilterOptions(bundle.filterOptions);
+          renderCards(bundle.cards);
+          const d = new Date(bundle.updatedAt);
+          document.getElementById('updatedAt').textContent =
+            'Update terakhir: ' + d.toLocaleString('id-ID');
+          btn.classList.remove('loading');
+        })
+        .catch(function(err){
+          document.getElementById('cardsGrid').innerHTML =
+            '<div class="empty-state">Gagal memuat data: ' + err.message + '</div>';
+          btn.classList.remove('loading');
+        });
+    }
+
+    /* ---------------- Init ---------------- */
+
+    function initAppInteractions(){
+      renderSkeletonCards();
+      buildSegmentedControl();
+
+      document.getElementById('activeSearch').addEventListener('input', function(){
+        const key = activeTableKey;
+        tableLocalFilters[key].searchRaw = this.value;
+        tableLocalFilters[key].search = this.value.trim().toLowerCase();
+        renderActiveTable();
+      });
+      document.getElementById('activeTLFilter').addEventListener('change', function(){
+        tableLocalFilters[activeTableKey].tl = this.value;
+        renderActiveTable();
+        updateTLPopulationPanel(this.value);
+      });
+
+      loadData();
+    }
+
+    /* ================= AUTH ================= */
+
+    function showAppScreen(session){
+      currentSession = session;
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appScreen').style.display = 'block';
+
+      const chip = document.getElementById('userChip');
+      chip.innerHTML = (session.nama || session.username) + ' <span class="role-badge">' + session.role + '</span>';
+
+      document.getElementById('btnManageUsers').style.display = session.role === 'superadmin' ? 'flex' : 'none';
+
+      initAppInteractions();
+    }
+
+    function showLoginScreen(){
+      currentSession = null;
+      try { localStorage.removeItem(SESSION_STORAGE_KEY); } catch(e){}
+      document.getElementById('appScreen').style.display = 'none';
+      document.getElementById('loginScreen').style.display = 'flex';
+      document.getElementById('loginUsername').focus();
+    }
+
+    function handleLogin(evt){
+      evt.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('btnLogin');
+      const errBox = document.getElementById('loginError');
+      errBox.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Memproses...';
+
+      callApi('login', { username: username, password: password })
+        .then(function(result){
+          btn.disabled = false;
+          btn.textContent = 'Masuk';
+          if (!result.success){
+            errBox.textContent = result.message || 'Login gagal.';
+            errBox.style.display = 'block';
+            return;
+          }
+          try {
+            localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify({
+              token: result.token, username: result.username, role: result.role, nama: result.nama
+            }));
+          } catch(e){}
+          showAppScreen({ token: result.token, username: result.username, role: result.role, nama: result.nama });
+        })
+        .catch(function(err){
+          btn.disabled = false;
+          btn.textContent = 'Masuk';
+          errBox.textContent = err.message || 'Terjadi kesalahan. Coba lagi.';
+          errBox.style.display = 'block';
+        });
+
+      return false;
+    }
+
+    function handleLogout(){
+      if (currentSession){
+        callApi('logout', { token: currentSession.token }).catch(function(){});
+      }
+      showLoginScreen();
+    }
+
+    function bootstrapSession(){
+      let saved = null;
+      try { saved = JSON.parse(localStorage.getItem(SESSION_STORAGE_KEY) || 'null'); } catch(e){}
+
+      if (!saved || !saved.token){
+        showLoginScreen();
+        return;
+      }
+
+      callApi('checkSession', { token: saved.token })
+        .then(function(session){
+          if (session){
+            showAppScreen({ token: saved.token, username: session.username, role: session.role, nama: session.nama });
+          } else {
+            showLoginScreen();
+          }
+        })
+        .catch(function(){
+          showLoginScreen();
+        });
+    }
+
+    /* ================= MANAJEMEN USER (superadmin) ================= */
+
+    function onUmRoleChange(){
+      const role = document.getElementById('umNewRole').value;
+      document.getElementById('umUsernameLabel').textContent = role === 'view' ? 'Username (CSDM)' : 'Username';
+      document.getElementById('umFormNote').style.display = role === 'view' ? 'block' : 'none';
+    }
+
+    function openUserManager(){
+      document.getElementById('umOverlay').classList.add('open');
+      onUmRoleChange();
+      loadUserList();
+    }
+
+    function closeUserManager(){
+      document.getElementById('umOverlay').classList.remove('open');
+    }
+
+    function loadUserList(){
+      document.getElementById('umTableWrap').innerHTML = '<div class="modal-loading">Memuat data...</div>';
+      callApi('getUserList', { token: currentSession.token })
+        .then(renderUserList)
+        .catch(function(err){
+          document.getElementById('umTableWrap').innerHTML =
+            '<div class="modal-empty">Gagal memuat: ' + err.message + '</div>';
+        });
+    }
+
+    function renderUserList(users){
+      const wrap = document.getElementById('umTableWrap');
+      if (!users || users.length === 0){
+        wrap.innerHTML = '<div class="modal-empty">Belum ada user.</div>';
+        return;
+      }
+      const rows = users.map(function(u){
+        return `<tr>
+          <td>${u.username}</td>
+          <td>${u.nama || '-'}</td>
+          <td><span class="um-role-pill ${u.role}">${u.role}</span></td>
+          <td class="um-actions">
+            <button onclick="promptEditUser('${u.username}', '${u.role}')">Edit</button>
+            <button class="danger" onclick="confirmDeleteUser('${u.username}')">Hapus</button>
+          </td>
+        </tr>`;
+      }).join('');
+      wrap.innerHTML = `
+        <table class="um-table">
+          <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      `;
+    }
+
+    function submitCreateUser(){
+      const payload = {
+        username: document.getElementById('umNewUsername').value.trim(),
+        nama: document.getElementById('umNewNama').value.trim(),
+        password: document.getElementById('umNewPassword').value,
+        role: document.getElementById('umNewRole').value
+      };
+      callApi('createUser', { token: currentSession.token, payload: payload })
+        .then(function(){
+          document.getElementById('umNewUsername').value = '';
+          document.getElementById('umNewNama').value = '';
+          document.getElementById('umNewPassword').value = '';
+          loadUserList();
+        })
+        .catch(function(err){ alert(err.message); });
+    }
+
+    function promptEditUser(username, currentRole){
+      const newRole = prompt('Role baru untuk "' + username + '" (view / superadmin):', currentRole);
+      if (newRole === null) return;
+      const newPassword = prompt('Password baru (kosongkan kalau tidak diganti):', '');
+
+      const payload = { role: newRole };
+      if (newPassword) payload.password = newPassword;
+
+      callApi('updateUser', { token: currentSession.token, targetUsername: username, payload: payload })
+        .then(loadUserList)
+        .catch(function(err){ alert(err.message); });
+    }
+
+    function confirmDeleteUser(username){
+      if (!confirm('Hapus user "' + username + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+      callApi('deleteUser', { token: currentSession.token, targetUsername: username })
+        .then(loadUserList)
+        .catch(function(err){ alert(err.message); });
+    }
+
+    window.onload = function(){
+      bootstrapSession();
+    };
+  </script>
+</body>
+</html>
