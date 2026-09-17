@@ -169,7 +169,7 @@
       appearance:none;
       -webkit-appearance:none;
       cursor:pointer;
-      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23B7B0CC'/></svg>");
+      background-image:("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%23B7B0CC'/></svg>");
       background-repeat:no-repeat;
       background-position:right 14px center;
       padding-right:30px;
@@ -813,7 +813,7 @@
      *         nilai berupa object/array otomatis di-JSON.stringify dulu.
      */
     function callApi(action, params){
-      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('PASTE_URL') === 0){
+      if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('https://script.google.com/macros/s/AKfycbwTPVuAsPSwbXpWK9CyYobj_3V7BzlbDMQqa_N063h3EMFv4DcUPw3T5iEz6gPNJu8rdw/exec') === 0){
         return Promise.reject(new Error('APPS_SCRIPT_URL belum diisi. Buka index.html, isi URL Web App Apps Script kamu di bagian atas <script>.'));
       }
       params = params || {};
