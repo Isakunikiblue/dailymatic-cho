@@ -857,6 +857,7 @@
     const SESSION_STORAGE_KEY = 'dailyMaticCho_session';
 
     const CARD_ORDER = ['produktivity','closedRate','callbackRate','hvcRate','aht','qaScore','staffTime'];
+    const MONTH_NAMES_FULL = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
     // Filter ATAS - hanya mengontrol 6 card
     let currentFilters = { tgl:'All', bulan:'All', tahun:'All' };
@@ -1132,17 +1133,93 @@
         return;
       }
 
-      const showDateCols = detail.group === 'new';
-      const headCols = showDateCols
-        ? '<th>Tgl</th><th>Bulan</th><th>Tahun</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>'
-        : '<th>Bulan</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>';
+      if (detail.group === 'new') {
+        renderPivotTable_(detail, rows, container);
+      } else {
+        renderFlatTable_(detail, rows, container);
+      }
+    }
+
+    /**
+     * Kolom tanggal untuk pivot table: kalau Bulan & Tahun spesifik dipilih di panel
+     * Detail, pakai SEMUA hari di bulan itu (1 s.d. akhir bulan) - termasuk hari yang
+     * datanya kosong. Kalau tidak (Bulan/Tahun = Semua), pakai tanggal unik yang
+     * benar-benar ada di data.
+     */
+    function buildPivotDateColumns_(rows){
+      const bulanSel = detailFilters.bulan;
+      const tahunSel = detailFilters.tahun;
+      if (bulanSel && bulanSel !== 'All' && tahunSel && tahunSel !== 'All'){
+        const monthIdx = MONTH_NAMES_FULL.indexOf(bulanSel);
+        const year = parseInt(tahunSel, 10);
+        if (monthIdx !== -1 && !isNaN(year)){
+          const totalDays = new Date(year, monthIdx + 1, 0).getDate();
+          const cols = [];
+          for (let d = 1; d <= totalDays; d++) cols.push(String(d));
+          return cols;
+        }
+      }
+      const uniqueDates = Array.from(new Set(rows.map(r => r.tgl))).filter(Boolean);
+      uniqueDates.sort(function(a,b){ return parseInt(a,10) - parseInt(b,10); });
+      return uniqueDates;
+    }
+
+    function renderPivotTable_(detail, rows, container){
+      const dateCols = buildPivotDateColumns_(rows);
+
+      // Kelompokkan baris per Nama Agent
+      const agentMap = {};
+      rows.forEach(function(r){
+        if (!agentMap[r.agent]) agentMap[r.agent] = { tl: r.tl, values: {} };
+        agentMap[r.agent].values[r.tgl] = r.value;
+        if (!agentMap[r.agent].tl && r.tl) agentMap[r.agent].tl = r.tl;
+      });
+      const agentNames = Object.keys(agentMap).sort();
+
+      if (agentNames.length === 0 || dateCols.length === 0){
+        container.innerHTML = '<div class="modal-empty">Tidak ada data untuk filter ini.</div>';
+        return;
+      }
+
+      const headCols = '<th class="pivot-sticky-col">Nama Agent</th><th class="pivot-sticky-col pivot-sticky-col-2">Team Leader</th>' +
+        dateCols.map(d => `<th>${d}</th>`).join('');
+
+      const bodyRows = agentNames.map(function(agent){
+        const info = agentMap[agent];
+        const cells = dateCols.map(function(d){
+          const val = info.values[d];
+          if (val === undefined){
+            return '<td class="pivot-cell pivot-empty">-</td>';
+          }
+          const valText = formatRowValue(detail.unit, val);
+          const cls = val === 0 ? 'pivot-cell value-zero' : 'pivot-cell';
+          return `<td class="${cls}">${valText}</td>`;
+        }).join('');
+        return `<tr><td class="pivot-sticky-col">${agent}</td><td class="pivot-sticky-col pivot-sticky-col-2">${info.tl || '-'}</td>${cells}</tr>`;
+      }).join('');
+
+      let note = '';
+      if (detail.totalRows > detail.rows.length){
+        note += `<div class="modal-note">Server membatasi ${detail.rows.length} dari total ${detail.totalRows} baris. Persempit filter atas (Tgl/Bulan/Tahun) untuk hasil lebih spesifik.</div>`;
+      }
+      note += `<div class="modal-note">${agentNames.length} agent &times; ${dateCols.length} tanggal ditampilkan setelah filter tabel ini.</div>`;
+
+      container.innerHTML = `
+        <table class="detail-table pivot-table">
+          <thead><tr>${headCols}</tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+        ${note}
+      `;
+    }
+
+    function renderFlatTable_(detail, rows, container){
+      const headCols = '<th>Bulan</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>';
 
       const bodyRows = rows.map(function(r){
         const valText = formatRowValue(detail.unit, r.value);
         const valClass = r.value === 0 ? 'value-cell value-zero' : 'value-cell';
-        const cells = showDateCols
-          ? `<td>${r.tgl}</td><td>${r.bulan}</td><td>${r.tahun}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`
-          : `<td>${r.bulan}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`;
+        const cells = `<td>${r.bulan}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`;
         return `<tr>${cells}</tr>`;
       }).join('');
 
