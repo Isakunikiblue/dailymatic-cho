@@ -1158,9 +1158,11 @@
       }
 
       if (detail.group === 'new') {
-        renderPivotTable_(detail, rows, container);
+        const columns = buildPivotDateColumns_(rows);
+        renderPivotTable_(detail, rows, container, columns, 'tgl');
       } else {
-        renderFlatTable_(detail, rows, container);
+        const columns = buildPivotMonthColumns_(rows);
+        renderPivotTable_(detail, rows, container, columns, 'bulan');
       }
     }
 
@@ -1188,29 +1190,45 @@
       return uniqueDates;
     }
 
-    function renderPivotTable_(detail, rows, container){
-      const dateCols = buildPivotDateColumns_(rows);
+    /**
+     * Kolom Bulan untuk pivot table QA Score (sheet-nya cuma punya granularitas bulanan,
+     * tidak ada kolom Tgl) - dipakai supaya tampilan & struktur tabelnya sama seperti
+     * metrik lain, cuma kolomnya Bulan alih-alih tanggal.
+     */
+    function buildPivotMonthColumns_(rows){
+      const uniqueMonths = Array.from(new Set(rows.map(r => r.bulan))).filter(Boolean);
+      uniqueMonths.sort(function(a,b){ return MONTH_NAMES_FULL.indexOf(a) - MONTH_NAMES_FULL.indexOf(b); });
+      return uniqueMonths;
+    }
 
+    /**
+     * Tabel pivot: baris = Nama Agent (sticky di kiri), kolom = colKey ('tgl' untuk
+     * metrik harian, 'bulan' untuk QA Score). Dipakai untuk SEMUA metrik supaya
+     * tampilan & strukturnya konsisten.
+     */
+    function renderPivotTable_(detail, rows, container, columns, colKey){
       // Kelompokkan baris per Nama Agent
       const agentMap = {};
       rows.forEach(function(r){
         if (!agentMap[r.agent]) agentMap[r.agent] = { tl: r.tl, values: {} };
-        agentMap[r.agent].values[r.tgl] = r.value;
+        agentMap[r.agent].values[r[colKey]] = r.value;
         if (!agentMap[r.agent].tl && r.tl) agentMap[r.agent].tl = r.tl;
       });
       const agentNames = Object.keys(agentMap).sort();
 
-      if (agentNames.length === 0 || dateCols.length === 0){
+      if (agentNames.length === 0 || columns.length === 0){
         container.innerHTML = '<div class="modal-empty">Tidak ada data untuk filter ini.</div>';
         return;
       }
 
+      const colLabel = colKey === 'bulan' ? 'bulan' : 'tanggal';
+
       const headCols = '<th class="pivot-sticky-col">Nama Agent</th><th class="pivot-sticky-col pivot-sticky-col-2">Team Leader</th>' +
-        dateCols.map(d => `<th>${d}</th>`).join('');
+        columns.map(d => `<th>${d}</th>`).join('');
 
       const bodyRows = agentNames.map(function(agent){
         const info = agentMap[agent];
-        const cells = dateCols.map(function(d){
+        const cells = columns.map(function(d){
           const val = info.values[d];
           if (val === undefined){
             return '<td class="pivot-cell pivot-empty">-</td>';
@@ -1226,35 +1244,10 @@
       if (detail.totalRows > detail.rows.length){
         note += `<div class="modal-note">Server membatasi ${detail.rows.length} dari total ${detail.totalRows} baris. Persempit filter atas (Tgl/Bulan/Tahun) untuk hasil lebih spesifik.</div>`;
       }
-      note += `<div class="modal-note">${agentNames.length} agent &times; ${dateCols.length} tanggal ditampilkan setelah filter tabel ini.</div>`;
+      note += `<div class="modal-note">${agentNames.length} agent &times; ${columns.length} ${colLabel} ditampilkan setelah filter tabel ini.</div>`;
 
       container.innerHTML = `
         <table class="detail-table pivot-table">
-          <thead><tr>${headCols}</tr></thead>
-          <tbody>${bodyRows}</tbody>
-        </table>
-        ${note}
-      `;
-    }
-
-    function renderFlatTable_(detail, rows, container){
-      const headCols = '<th>Bulan</th><th>Nama Agent</th><th>Team Leader</th><th>Nilai</th>';
-
-      const bodyRows = rows.map(function(r){
-        const valText = formatRowValue(detail.unit, r.value);
-        const valClass = r.value === 0 ? 'value-cell value-zero' : 'value-cell';
-        const cells = `<td>${r.bulan}</td><td>${r.agent || '-'}</td><td>${r.tl || '-'}</td><td class="${valClass}">${valText}</td>`;
-        return `<tr>${cells}</tr>`;
-      }).join('');
-
-      let note = '';
-      if (detail.totalRows > detail.rows.length){
-        note += `<div class="modal-note">Server membatasi ${detail.rows.length} dari total ${detail.totalRows} baris. Persempit filter atas (Tgl/Bulan/Tahun) untuk hasil lebih spesifik.</div>`;
-      }
-      note += `<div class="modal-note">${rows.length} baris ditampilkan setelah filter tabel ini.</div>`;
-
-      container.innerHTML = `
-        <table class="detail-table">
           <thead><tr>${headCols}</tr></thead>
           <tbody>${bodyRows}</tbody>
         </table>
