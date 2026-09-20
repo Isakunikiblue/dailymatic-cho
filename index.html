@@ -22,6 +22,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root{
       --purple-1:#6D28D9;
@@ -406,6 +407,7 @@
     }
     .btn-download:hover{ transform:translateY(-2px); }
     .btn-download svg{ width:14px; height:14px; }
+    .btn-download-png{ background:linear-gradient(135deg, var(--purple-2), var(--purple-1)); }
 
     .table-scroll{
       max-height:420px;
@@ -613,6 +615,20 @@
     .um-actions button.danger{ color:#F87171; }
     .um-actions button:hover{ background:rgba(255,255,255,0.16); }
     .um-note{ font-size:11px; color:var(--text-dim); margin-top:4px; }
+    .um-pw-wrap{ display:inline-flex; align-items:center; gap:6px; }
+    .um-pw-text{ font-family:monospace; font-size:12.5px; color:var(--text-main); letter-spacing:0.5px; }
+    .um-pw-btn{
+      background:rgba(255,255,255,0.08);
+      border:1px solid var(--border-soft);
+      color:var(--text-main);
+      width:24px; height:24px;
+      border-radius:6px;
+      cursor:pointer;
+      font-size:12px;
+      line-height:1;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .um-pw-btn:hover{ background:rgba(255,255,255,0.16); }
   </style>
 </head>
 <body>
@@ -651,7 +667,7 @@
   <div class="header">
     <div class="title-wrap">
       <h1>Daily Matic CHO</h1>
-      <p>Ringkasan performa &amp; kualitas agent CHO</p>
+      <p id="greetingText">Ringkasan performa &amp; kualitas agent CHO</p>
     </div>
     <div class="header-right">
       <span class="updated-at" id="updatedAt">Memuat data...</span>
@@ -732,6 +748,14 @@
             <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
           Unduh .xlsx
+        </button>
+        <button class="btn-download btn-download-png" onclick="exportActiveTableToPNG()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <path d="M21 15l-5-5L5 21" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Unduh .png
         </button>
       </div>
     </div>
@@ -1345,6 +1369,42 @@
       XLSX.writeFile(wb, 'Detail_' + safeLabel + '_' + dateStr + '.xlsx');
     }
 
+    function exportActiveTableToPNG(){
+      if (typeof html2canvas === 'undefined'){
+        alert('Modul export gambar gagal dimuat. Cek koneksi internet lalu coba lagi.');
+        return;
+      }
+      const detail = tableDataCache[activeTableKey];
+      if (!detail){
+        alert('Tidak ada data untuk diunduh pada filter saat ini.');
+        return;
+      }
+      const target = document.getElementById('activeTableScroll');
+
+      // Sementara matikan batas tinggi & scroll supaya SELURUH tabel ikut ter-capture,
+      // bukan cuma bagian yang kelihatan di layar.
+      const prevMaxHeight = target.style.maxHeight;
+      const prevOverflow = target.style.overflow;
+      target.style.maxHeight = 'none';
+      target.style.overflow = 'visible';
+
+      html2canvas(target, { backgroundColor: '#181425', scale: 2 }).then(function(canvas){
+        target.style.maxHeight = prevMaxHeight;
+        target.style.overflow = prevOverflow;
+
+        const safeLabel = (detail.label || 'Detail').replace(/[^a-z0-9]/gi, '_');
+        const dateStr = new Date().toISOString().slice(0, 10);
+        const link = document.createElement('a');
+        link.download = 'Detail_' + safeLabel + '_' + dateStr + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }).catch(function(err){
+        target.style.maxHeight = prevMaxHeight;
+        target.style.overflow = prevOverflow;
+        alert('Gagal membuat gambar: ' + err.message);
+      });
+    }
+
     /* ---------------- Filter global & load data ---------------- */
 
     function populateSelect(id, options, selected, placeholder){
@@ -1475,6 +1535,14 @@
 
     /* ================= AUTH ================= */
 
+    function greetingInfo_(){
+      const h = new Date().getHours();
+      if (h >= 4 && h < 11)  return { text: 'Selamat Pagi',  icon: '☀️' };
+      if (h >= 11 && h < 15) return { text: 'Selamat Siang', icon: '🌤️' };
+      if (h >= 15 && h < 18) return { text: 'Selamat Sore',  icon: '🌇' };
+      return { text: 'Selamat Malam', icon: '🌙' };
+    }
+
     function showAppScreen(session){
       currentSession = session;
       document.getElementById('loginScreen').style.display = 'none';
@@ -1482,6 +1550,10 @@
 
       const chip = document.getElementById('userChip');
       chip.innerHTML = (session.nama || session.username) + ' <span class="role-badge">' + session.role + '</span>';
+
+      const g = greetingInfo_();
+      document.getElementById('greetingText').textContent =
+        g.icon + ' ' + g.text + ', ' + (session.nama || session.username) + '!';
 
       document.getElementById('btnManageUsers').style.display = session.role === 'superadmin' ? 'flex' : 'none';
 
@@ -1596,10 +1668,27 @@
         return;
       }
       const rows = users.map(function(u){
+        let passwordCell;
+        if (u.role === 'view'){
+          if (u.password){
+            const pwId = 'pw_' + u.username.replace(/[^a-zA-Z0-9]/g, '_');
+            passwordCell = `
+              <span class="um-pw-wrap">
+                <span class="um-pw-text" id="${pwId}" data-pw="${u.password.replace(/"/g,'&quot;')}" data-visible="false">••••••••</span>
+                <button class="um-pw-btn" onclick="toggleUserPassword('${pwId}')" title="Lihat/sembunyikan">👁</button>
+                <button class="um-pw-btn" onclick="copyUserPassword('${pwId}')" title="Salin">⧉</button>
+              </span>`;
+          } else {
+            passwordCell = '<span class="um-note">- (password sebelum fitur ini aktif, reset via Edit)</span>';
+          }
+        } else {
+          passwordCell = '<span class="um-note">Tersembunyi (superadmin)</span>';
+        }
         return `<tr>
           <td>${u.username}</td>
           <td>${u.nama || '-'}</td>
           <td><span class="um-role-pill ${u.role}">${u.role}</span></td>
+          <td>${passwordCell}</td>
           <td class="um-actions">
             <button onclick="promptEditUser('${u.username}', '${u.role}')">Edit</button>
             <button class="danger" onclick="confirmDeleteUser('${u.username}')">Hapus</button>
@@ -1608,10 +1697,33 @@
       }).join('');
       wrap.innerHTML = `
         <table class="um-table">
-          <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Aksi</th></tr></thead>
+          <thead><tr><th>Username</th><th>Nama</th><th>Role</th><th>Password</th><th>Aksi</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       `;
+    }
+
+    function toggleUserPassword(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const visible = el.getAttribute('data-visible') === 'true';
+      el.textContent = visible ? '••••••••' : el.getAttribute('data-pw');
+      el.setAttribute('data-visible', visible ? 'false' : 'true');
+    }
+
+    function copyUserPassword(id){
+      const el = document.getElementById(id);
+      if (!el) return;
+      const pw = el.getAttribute('data-pw');
+      if (navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(pw).then(function(){
+          alert('Password disalin ke clipboard.');
+        }).catch(function(){
+          prompt('Salin manual password ini:', pw);
+        });
+      } else {
+        prompt('Salin manual password ini:', pw);
+      }
     }
 
     function submitCreateUser(){
