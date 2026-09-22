@@ -18,6 +18,7 @@
     ============================================================
   -->
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300&display=swap" rel="stylesheet">
@@ -52,7 +53,7 @@
         radial-gradient(circle at 50% 100%, rgba(139,92,246,0.25), transparent 50%),
         var(--bg-dark);
       color:var(--text-main);
-      padding:28px 32px 60px;
+      padding: calc(28px + env(safe-area-inset-top, 0px)) 32px calc(60px + env(safe-area-inset-bottom, 0px));
     }
 
     /* ---------- HEADER ---------- */
@@ -629,6 +630,67 @@
       display:flex; align-items:center; justify-content:center;
     }
     .um-pw-btn:hover{ background:rgba(255,255,255,0.16); }
+
+    /* ============================================================
+       MOBILE (Android & iPhone)
+       ============================================================ */
+    .mobile-scroll-hint{ display:none; }
+
+    @media (max-width: 768px){
+      body{ padding-left:16px; padding-right:16px; }
+
+      .header{ gap:10px; }
+      .header .title-wrap h1{ font-size:22px; }
+      .header-right{ width:100%; }
+      .updated-at{ order:3; width:100%; font-size:11px; }
+      .btn-icon{ width:44px; height:44px; }
+      .btn-refresh{ flex:1 1 auto; justify-content:center; }
+
+      .filter-bar, .detail-filter-row{ padding:14px; gap:10px; }
+      .filter-field{ min-width:100%; flex-basis:100%; }
+      .filter-actions{ width:100%; }
+      .filter-actions .btn-apply, .filter-actions .btn-reset{ flex:1 1 0; }
+
+      .cards-grid{ gap:14px; margin-bottom:24px; }
+      .card{ padding:18px; }
+      .card-value{ font-size:28px; }
+
+      .detail-panel{ padding:14px; }
+      .segmented-control{ padding:5px; gap:4px; }
+      .segment-btn{ padding:9px 12px; font-size:12px; }
+
+      .active-table-toolbar{ gap:8px; }
+      .at-search, .at-tl-filter{ width:100%; flex:1 1 100%; }
+      .toolbar-right{ margin-left:0; width:100%; flex-wrap:wrap; gap:8px; }
+      .btn-download{ flex:1 1 auto; justify-content:center; padding:10px 12px; font-size:11.5px; }
+      .active-avg-badge, .pop-inline-badge{ width:100%; justify-content:center; }
+
+      /* Tabel pivot: hanya Nama Agent tetap sticky di HP, Team Leader ikut scroll
+         horizontal supaya kolom tanggal dapat ruang lebih lega */
+      .pivot-sticky-col-2{ left:auto; background:inherit; }
+      .pivot-table th, .pivot-table td{ padding:7px 8px; font-size:12px; }
+      .pivot-sticky-col{ width:130px; min-width:130px; max-width:130px; }
+      .pivot-table thead th:not(.pivot-sticky-col):not(.pivot-sticky-col-2){ min-width:52px; }
+
+      .table-scroll{ max-height:360px; }
+      .mobile-scroll-hint{
+        display:block;
+        font-size:11px;
+        color:var(--text-dim);
+        text-align:center;
+        margin-bottom:8px;
+      }
+
+      .um-panel{ max-width:100%; max-height:92vh; border-radius:16px 16px 0 0; }
+      .um-add-form .filter-field{ min-width:100%; flex-basis:100%; }
+      .um-header{ padding:14px 16px; }
+      .um-body{ padding:14px 16px; }
+    }
+
+    @media (max-width: 420px){
+      .header .title-wrap h1{ font-size:19px; }
+      .card-value{ font-size:24px; }
+    }
   </style>
 </head>
 <body>
@@ -759,6 +821,7 @@
         </button>
       </div>
     </div>
+    <div class="mobile-scroll-hint">← Geser untuk lihat tanggal lainnya →</div>
     <div class="table-scroll" id="activeTableScroll">
       <div class="modal-empty">Pilih Tgl / Bulan / Tahun di atas, lalu klik <strong>Terapkan</strong> untuk menampilkan data.</div>
     </div>
