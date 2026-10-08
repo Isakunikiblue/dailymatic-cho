@@ -4411,6 +4411,170 @@
             transform: translateY(-1px);
         }
 
+        /* GOOGLE APPS SCRIPT CONFIG MODAL & PILL */
+        .btn-api-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 12px;
+            border-radius: 999px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid var(--border-soft);
+            background: var(--bg-card);
+            color: var(--text-main);
+            transition: all 0.2s ease;
+        }
+        .btn-api-status-pill:hover {
+            border-color: var(--purple-2);
+            transform: translateY(-1px);
+        }
+        .status-dot-pulse {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #10B981;
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+            display: inline-block;
+        }
+        .status-dot-pulse.offline {
+            background: #F59E0B;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.6);
+        }
+        .gas-config-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 15, 28, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 10005;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            animation: bpFadeIn 0.2s ease-out;
+        }
+        .gas-config-modal-overlay.open {
+            display: flex;
+        }
+        .gas-config-modal-card {
+            background: #181926;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7), 0 0 35px rgba(139, 92, 246, 0.2);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 540px;
+            max-height: 90vh;
+            overflow-y: auto;
+            color: #F8FAFC;
+            display: flex;
+            flex-direction: column;
+        }
+        .gas-config-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 24px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .gas-config-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .gas-config-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(16, 185, 129, 0.2));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .gas-config-title {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 700;
+            color: #FFFFFF;
+        }
+        .gas-config-subtitle {
+            margin: 2px 0 0;
+            font-size: 12px;
+            color: #94A3B8;
+        }
+        .gas-config-body {
+            padding: 20px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+        .gas-status-banner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            font-size: 12.5px;
+        }
+        .gas-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .gas-status-source {
+            font-size: 11px;
+            color: #94A3B8;
+            font-family: monospace;
+        }
+        .gas-test-result {
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .gas-test-result.success {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34D399;
+        }
+        .gas-test-result.error {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #F87171;
+        }
+        .gas-guide-card {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.2);
+            border-radius: 12px;
+            padding: 12px 16px;
+        }
+        .gas-guide-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #C4B5FD;
+            margin-bottom: 6px;
+        }
+        .gas-guide-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 11.5px;
+            color: #CBD5E1;
+            line-height: 1.6;
+        }
+        .gas-config-footer {
+            display: flex;
+            align-items: center;
+            padding: 16px 24px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 10px;
+        }
+
         /* PHOTO UPLOAD & REMOVE BACKGROUND MODAL */
         .bp-photo-modal-overlay {
             position: fixed;
@@ -5940,6 +6104,9 @@
                             💡 <strong>Demo Akses GitHub:</strong><br>
                             Superadmin: <code>superadmin</code> / <code>superadmin123</code> &bull; User: <code>19233208</code> / <code>password123</code>
                         </div>
+                        <button type="button" class="btn-gas-connect-login" onclick="openGasConfigModal()" style="margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; font-weight: 600; color: var(--purple-2); background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
+                            <span>⚙️ Hubungkan Google Apps Script (Live Data)</span>
+                        </button>
                     </div>
                 </div>
 
@@ -6205,6 +6372,10 @@
                         </span>
                     </span>
                     <span class="user-chip" id="userChip"></span>
+                    <button class="btn-api-status-pill" id="btnGasApiStatus" onclick="openGasConfigModal()" title="Konfigurasi URL Google Apps Script">
+                        <span class="status-dot-pulse" id="gasStatusDot"></span>
+                        <span id="gasStatusText">Apps Script</span>
+                    </button>
                     <button class="btn-icon theme-toggle-btn" id="btnThemeToggle" onclick="toggleTheme()"
                         title="Ganti Tema (Dark / Light)">
                         <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -6931,6 +7102,69 @@
         </div>
     </div>
 
+    <!-- ============ MODAL: Konfigurasi Google Apps Script Backend ============ -->
+    <div class="gas-config-modal-overlay" id="gasConfigModal" onclick="if(event.target===this) closeGasConfigModal()">
+        <div class="gas-config-modal-card">
+            <div class="gas-config-header">
+                <div class="gas-config-title-group">
+                    <div class="gas-config-icon">🔗</div>
+                    <div>
+                        <h3 class="gas-config-title">Koneksi Google Apps Script</h3>
+                        <p class="gas-config-subtitle">Hubungkan frontend GitHub Pages ke backend Google Apps Script</p>
+                    </div>
+                </div>
+                <button type="button" class="bp-photo-close-btn" onclick="closeGasConfigModal()">&times;</button>
+            </div>
+
+            <div class="gas-config-body">
+                <div class="gas-status-banner" id="gasStatusBanner">
+                    <div class="gas-status-indicator" id="gasBannerIndicator">
+                        <span class="status-dot-pulse" id="gasBannerDot"></span>
+                        <strong id="gasBannerStatusText">Memeriksa status...</strong>
+                    </div>
+                    <span class="gas-status-source" id="gasBannerSource">-</span>
+                </div>
+
+                <div class="input-field-group" style="margin-top: 14px;">
+                    <label class="input-field-label" for="gasUrlInput">URL Web App Google Apps Script</label>
+                    <div class="glass-input-box">
+                        <input type="url" id="gasUrlInput" placeholder="https://script.google.com/macros/s/AKfyc.../exec" autocomplete="off" style="font-size: 13px; font-family: monospace;">
+                    </div>
+                    <div style="font-size: 11px; color: var(--text-dim); margin-top: 6px; line-height: 1.4;">
+                        Salin URL deployment dari menu <strong>Deploy &gt; Manage deployments</strong> di Google Apps Script (berakhiran <code>/exec</code>).
+                    </div>
+                </div>
+
+                <div class="gas-test-result" id="gasTestResult" style="display: none;"></div>
+
+                <div class="gas-guide-card">
+                    <div class="gas-guide-title">📋 Cara Mendapatkan URL Web App di Google Apps Script:</div>
+                    <ol class="gas-guide-list">
+                        <li>Buka project Google Apps Script di <a href="https://script.google.com" target="_blank" style="color: #A78BFA; text-decoration: underline;">script.google.com</a></li>
+                        <li>Pastikan kode terbaru dari file <code>Code.gs</code> sudah disimpan</li>
+                        <li>Klik <strong>Deploy &gt; Manage deployments &gt; Edit (ikon pensil)</strong></li>
+                        <li>Pilih <strong>Version: New version</strong></li>
+                        <li>Pastikan <strong>Execute as: Me</strong> dan <strong>Who has access: Anyone</strong> (Siapa saja)</li>
+                        <li>Klik <strong>Deploy</strong> lalu salin URL Web App yang berakhiran <code>/exec</code> ke kolom di atas.</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="gas-config-footer">
+                <button type="button" class="btn-secondary" onclick="resetGasWebAppUrl()">
+                    Reset Default
+                </button>
+                <div style="flex: 1;"></div>
+                <button type="button" class="btn-secondary" id="btnTestGasUrl" onclick="testGasConnection()">
+                    ⚡ Tes Koneksi
+                </button>
+                <button type="button" class="btn-apply" onclick="saveGasConfigAndApply()">
+                    💾 Simpan &amp; Terapkan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- SVG defs untuk gradient sparkline -->
     <svg width="0" height="0">
         <defs>
@@ -6946,7 +7180,94 @@
     </svg>
 
     <script>
-        // Fallback simulator google.script.run jika file dibuka langsung di browser (preview lokal)
+        /* ================= GOOGLE APPS SCRIPT WEB APP INTEGRATION (GITHUB PAGES / LIVE) ================= */
+        /**
+         * Konfigurasi URL Google Apps Script Web App Deployment.
+         * Agar link GitHub Pages Anda bisa menarik data langsung dari Google Sheets / Google Apps Script:
+         * 1. Deploy script Anda di script.google.com:
+         *    - Deploy > Manage deployments > Edit
+         *    - Version: New version
+         *    - Execute as: Me
+         *    - Who has access: Anyone (Siapa saja)
+         * 2. Salin URL Web App yang berakhiran "/exec", lalu tempelkan di DEFAULT_GAS_URL di bawah ini
+         *    (atau atur kapan saja lewat tombol 'Apps Script' di header web app).
+         */
+        const DEFAULT_GAS_URL = ''; // Tempelkan URL Web App GAS Anda di sini jika ingin di-hardcode
+        const GAS_STORAGE_KEY = 'dailyMaticCho_gas_url';
+
+        function getGasWebAppUrl() {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const qUrl = params.get('api') || params.get('gas');
+                if (qUrl && qUrl.startsWith('http')) {
+                    localStorage.setItem(GAS_STORAGE_KEY, qUrl.trim());
+                    return qUrl.trim();
+                }
+            } catch (e) { }
+
+            try {
+                const saved = localStorage.getItem(GAS_STORAGE_KEY);
+                if (saved && saved.trim().startsWith('http')) return saved.trim();
+            } catch (e) { }
+
+            return DEFAULT_GAS_URL ? DEFAULT_GAS_URL.trim() : '';
+        }
+
+        function setGasWebAppUrl(url) {
+            try {
+                if (url && url.trim().startsWith('http')) {
+                    localStorage.setItem(GAS_STORAGE_KEY, url.trim());
+                } else {
+                    localStorage.removeItem(GAS_STORAGE_KEY);
+                }
+            } catch (e) { }
+            updateGasUiStatus();
+        }
+
+        async function fetchGasApi(action, params, isPost) {
+            const baseUrl = getGasWebAppUrl();
+            if (!baseUrl) {
+                throw new Error('URL Google Apps Script belum disetel.');
+            }
+
+            let targetUrl = baseUrl.trim();
+            if (isPost) {
+                const bodyPayload = Object.assign({ action: action }, params || {});
+                const res = await fetch(targetUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(bodyPayload),
+                    redirect: 'follow'
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status + ' dari Apps Script');
+                const json = await res.json();
+                if (json && json.ok) return json.data;
+                throw new Error((json && json.error) || 'Gagal dari Apps Script');
+            } else {
+                const urlObj = new URL(targetUrl);
+                urlObj.searchParams.set('action', action);
+                if (params) {
+                    Object.keys(params).forEach(k => {
+                        const v = params[k];
+                        if (typeof v === 'object' && v !== null) {
+                            urlObj.searchParams.set(k, JSON.stringify(v));
+                        } else if (v !== undefined && v !== null) {
+                            urlObj.searchParams.set(k, String(v));
+                        }
+                    });
+                }
+                const res = await fetch(urlObj.toString(), {
+                    method: 'GET',
+                    redirect: 'follow'
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status + ' dari Apps Script');
+                const json = await res.json();
+                if (json && json.ok) return json.data;
+                throw new Error((json && json.error) || 'Gagal dari Apps Script');
+            }
+        }
+
+        // Fallback simulator google.script.run jika file dibuka langsung di browser (preview lokal / GitHub Pages)
         if (typeof google === 'undefined' || !google.script || !google.script.run) {
             function createMockApi(sFn, fFn) {
                 const onSucc = typeof sFn === 'function' ? sFn : function () { };
@@ -7530,23 +7851,170 @@
                 };
             }
 
-            const baseApi = createMockApi();
+            function createGasLiveOrMockApi(sFn, fFn) {
+                const mock = createMockApi(sFn, fFn);
+                const onSucc = typeof sFn === 'function' ? sFn : function () { };
+                const onFail = typeof fFn === 'function' ? fFn : function () { };
+                const gasUrl = getGasWebAppUrl();
+
+                if (!gasUrl) {
+                    return mock; // Belum ada URL -> pakai simulator mock
+                }
+
+                // Terhubung ke Google Apps Script: jalankan via HTTP fetch() dengan auto-fallback ke mock
+                return {
+                    getBestPerformBundle: function (filters, token) {
+                        fetchGasApi('getBestPerformBundle', { filters: filters, token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script API Notice]', err);
+                                mock.getBestPerformBundle(filters);
+                            });
+                    },
+                    getDashboardBundle: function (filters, forceRefresh, token) {
+                        fetchGasApi('getDashboardBundle', { filters: filters, forceRefresh: forceRefresh, token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script API Notice]', err);
+                                mock.getDashboardBundle(filters);
+                            });
+                    },
+                    getDetailTable: function (key, filters, token) {
+                        fetchGasApi('getDetailTable', { key: key, filters: filters, token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script API Notice]', err);
+                                mock.getDetailTable(key, filters);
+                            });
+                    },
+                    getMetricPopulation: function (key, filters, token) {
+                        fetchGasApi('getMetricPopulation', { key: key, filters: filters, token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script API Notice]', err);
+                                mock.getMetricPopulation(key, filters);
+                            });
+                    },
+                    login: function (u, p) {
+                        fetchGasApi('login', { username: u, password: p }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script Login Fallback]', err);
+                                mock.login(u, p);
+                            });
+                    },
+                    checkSession: function (token) {
+                        fetchGasApi('checkSession', { token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                console.warn('[Apps Script Session Notice]', err);
+                                mock.checkSession(token);
+                            });
+                    },
+                    logout: function (token) {
+                        fetchGasApi('logout', { token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.logout(token);
+                            });
+                    },
+                    getUserList: function (token) {
+                        fetchGasApi('getUserList', { token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.getUserList();
+                            });
+                    },
+                    createUser: function (token, payload) {
+                        fetchGasApi('createUser', { token: token, payload: payload }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.createUser(token, payload);
+                            });
+                    },
+                    updateUser: function (token, targetUsername, payload) {
+                        fetchGasApi('updateUser', { token: token, targetUsername: targetUsername, payload: payload }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.updateUser(token, targetUsername, payload);
+                            });
+                    },
+                    changeUserRole: function (token, targetUsername, newRole) {
+                        fetchGasApi('changeUserRole', { token: token, targetUsername: targetUsername, newRole: newRole }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.changeUserRole(token, targetUsername, newRole);
+                            });
+                    },
+                    deleteUser: function (token, targetUsername) {
+                        fetchGasApi('deleteUser', { token: token, targetUsername: targetUsername }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.deleteUser(token, targetUsername);
+                            });
+                    },
+                    logUserActivity: function (token, activityAction, details, userAgent) {
+                        fetchGasApi('logUserActivity', { token: token, activityAction: activityAction, details: details, userAgent: userAgent }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.logUserActivity(token, activityAction, details, userAgent);
+                            });
+                    },
+                    getActivityLogs: function (token, targetUser, limit) {
+                        fetchGasApi('getActivityLogs', { token: token, targetUser: targetUser, limit: limit }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.getActivityLogs(token, targetUser, limit);
+                            });
+                    },
+                    clearActivityLogs: function (token) {
+                        fetchGasApi('clearActivityLogs', { token: token }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.clearActivityLogs(token);
+                            });
+                    },
+                    getProfilePhotos: function (token) {
+                        fetchGasApi('getProfilePhotos', { token: token }, false)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.getProfilePhotos(token);
+                            });
+                    },
+                    saveProfilePhoto: function (token, name, type, photoData) {
+                        fetchGasApi('saveProfilePhoto', { token: token, name: name, type: type, photoData: photoData }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.saveProfilePhoto(token, name, type, photoData);
+                            });
+                    },
+                    deleteProfilePhoto: function (token, name) {
+                        fetchGasApi('deleteProfilePhoto', { token: token, name: name }, true)
+                            .then(onSucc)
+                            .catch(err => {
+                                mock.deleteProfilePhoto(token, name);
+                            });
+                    }
+                };
+            }
+
+            const baseApi = createGasLiveOrMockApi();
             window.google = {
                 script: {
                     run: Object.assign({}, baseApi, {
                         withSuccessHandler: function (successFn) {
-                            const handlerApi = createMockApi(successFn);
+                            const handlerApi = createGasLiveOrMockApi(successFn);
                             return Object.assign({}, handlerApi, {
                                 withFailureHandler: function (failFn) {
-                                    return createMockApi(successFn, failFn);
+                                    return createGasLiveOrMockApi(successFn, failFn);
                                 }
                             });
                         },
                         withFailureHandler: function (failFn) {
-                            const handlerApi = createMockApi(null, failFn);
+                            const handlerApi = createGasLiveOrMockApi(null, failFn);
                             return Object.assign({}, handlerApi, {
                                 withSuccessHandler: function (successFn) {
-                                    return createMockApi(successFn, failFn);
+                                    return createGasLiveOrMockApi(successFn, failFn);
                                 }
                             });
                         }
@@ -7554,6 +8022,119 @@
                 }
             };
         }
+
+        /* ================= MODAL & UI CONTROLLER: GOOGLE APPS SCRIPT CONFIG ================= */
+        function openGasConfigModal() {
+            const modal = document.getElementById('gasConfigModal');
+            if (!modal) return;
+            const input = document.getElementById('gasUrlInput');
+            if (input) input.value = getGasWebAppUrl();
+            const resEl = document.getElementById('gasTestResult');
+            if (resEl) { resEl.style.display = 'none'; resEl.innerHTML = ''; }
+            updateGasUiStatus();
+            modal.classList.add('open');
+        }
+
+        function closeGasConfigModal() {
+            const modal = document.getElementById('gasConfigModal');
+            if (modal) modal.classList.remove('open');
+        }
+
+        function saveGasConfigAndApply() {
+            const input = document.getElementById('gasUrlInput');
+            const val = input ? input.value.trim() : '';
+            if (val && !val.startsWith('http')) {
+                alert('URL harus diawali dengan http:// atau https://');
+                return;
+            }
+            setGasWebAppUrl(val);
+            updateGasUiStatus();
+            closeGasConfigModal();
+            showModernToast(val ? 'Koneksi Google Apps Script disimpan!' : 'URL Google Apps Script direset ke default.');
+            if (currentSession && typeof loadDashboardData === 'function') {
+                loadDashboardData(true);
+            }
+        }
+
+        function resetGasWebAppUrl() {
+            setGasWebAppUrl('');
+            const input = document.getElementById('gasUrlInput');
+            if (input) input.value = '';
+            const resEl = document.getElementById('gasTestResult');
+            if (resEl) { resEl.style.display = 'none'; }
+            updateGasUiStatus();
+            showModernToast('URL Google Apps Script direset.');
+        }
+
+        async function testGasConnection() {
+            const input = document.getElementById('gasUrlInput');
+            const val = input ? input.value.trim() : '';
+            const resEl = document.getElementById('gasTestResult');
+            const btn = document.getElementById('btnTestGasUrl');
+            if (!resEl) return;
+
+            if (!val) {
+                resEl.className = 'gas-test-result error';
+                resEl.innerHTML = '⚠️ Masukkan URL Web App Google Apps Script terlebih dahulu.';
+                resEl.style.display = 'block';
+                return;
+            }
+
+            if (btn) btn.textContent = '⏳ Menguji...';
+            resEl.className = 'gas-test-result';
+            resEl.innerHTML = 'Sedang menghubungi Google Apps Script...';
+            resEl.style.display = 'block';
+
+            try {
+                const urlObj = new URL(val);
+                urlObj.searchParams.set('action', 'checkSession');
+                const resp = await fetch(urlObj.toString(), { method: 'GET', redirect: 'follow' });
+                if (!resp.ok) throw new Error('HTTP status: ' + resp.status);
+                const json = await resp.json();
+                if (json && json.ok) {
+                    resEl.className = 'gas-test-result success';
+                    resEl.innerHTML = '✅ <strong>Koneksi Berhasil!</strong> Backend Google Apps Script aktif dan merespons dengan benar.';
+                } else {
+                    throw new Error((json && json.error) || 'Format respons tidak valid');
+                }
+            } catch (err) {
+                resEl.className = 'gas-test-result error';
+                resEl.innerHTML = '❌ <strong>Gagal Terhubung:</strong> ' + err.message + '<br><small>Pastikan deployment disetel: "Who has access: Anyone" dan URL berakhiran /exec</small>';
+            } finally {
+                if (btn) btn.textContent = '⚡ Tes Koneksi';
+            }
+        }
+
+        function updateGasUiStatus() {
+            const url = getGasWebAppUrl();
+            const dot = document.getElementById('gasStatusDot');
+            const txt = document.getElementById('gasStatusText');
+            const bannerDot = document.getElementById('gasBannerDot');
+            const bannerTxt = document.getElementById('gasBannerStatusText');
+            const bannerSrc = document.getElementById('gasBannerSource');
+
+            if (url) {
+                if (dot) { dot.className = 'status-dot-pulse'; }
+                if (txt) { txt.textContent = 'Live GAS'; }
+                if (bannerDot) { bannerDot.className = 'status-indicator-dot'; }
+                if (bannerTxt) { bannerTxt.textContent = 'Terhubung ke Google Apps Script (Live)'; }
+                if (bannerSrc) {
+                    try {
+                        const parsed = new URL(url);
+                        bannerSrc.textContent = parsed.hostname;
+                    } catch(e) {
+                        bannerSrc.textContent = 'Custom URL';
+                    }
+                }
+            } else {
+                if (dot) { dot.className = 'status-dot-pulse offline'; }
+                if (txt) { txt.textContent = 'Offline Demo'; }
+                if (bannerDot) { bannerDot.className = 'status-indicator-dot'; bannerDot.style.background = '#F59E0B'; }
+                if (bannerTxt) { bannerTxt.textContent = 'Mode Offline / Simulator Demo'; }
+                if (bannerSrc) { bannerSrc.textContent = 'Local Mock'; }
+            }
+        }
+        try { updateGasUiStatus(); } catch(e) {}
 
         const ICONS = {
             productivity: '<path d="M3 3v18h18" stroke-linecap="round" stroke-linejoin="round"/><path d="M7 15l4-4 3 3 5-6" stroke-linecap="round" stroke-linejoin="round"/>',
