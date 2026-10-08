@@ -6100,13 +6100,6 @@
                                 <div class="spinner-ring"></div>
                             </button>
                         </form>
-                        <div class="login-demo-hint" style="margin-top: 14px; font-size: 11.5px; color: var(--text-dim); text-align: center; background: rgba(139, 92, 246, 0.08); padding: 8px 12px; border-radius: 10px; border: 1px dashed rgba(139, 92, 246, 0.25); line-height: 1.5;">
-                            💡 <strong>Demo Akses GitHub:</strong><br>
-                            Superadmin: <code>superadmin</code> / <code>superadmin123</code> &bull; User: <code>19233208</code> / <code>password123</code>
-                        </div>
-                        <button type="button" class="btn-gas-connect-login" onclick="openGasConfigModal()" style="margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; font-weight: 600; color: var(--purple-2); background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.2); padding: 8px 12px; border-radius: 12px; cursor: pointer; transition: all 0.2s ease;">
-                            <span>⚙️ Hubungkan Google Apps Script (Live Data)</span>
-                        </button>
                     </div>
                 </div>
 
@@ -7192,7 +7185,7 @@
          * 2. Salin URL Web App yang berakhiran "/exec", lalu tempelkan di DEFAULT_GAS_URL di bawah ini
          *    (atau atur kapan saja lewat tombol 'Apps Script' di header web app).
          */
-        const DEFAULT_GAS_URL = ''; // Tempelkan URL Web App GAS Anda di sini jika ingin di-hardcode
+        const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbzZouIxhd6tWOf41dk1iV0W54dM66KE0J6oGPPeRJoC4fBjM_zYUnHhkHpQYaJRrjpt/exec';
         const GAS_STORAGE_KEY = 'dailyMaticCho_gas_url';
 
         function getGasWebAppUrl() {
